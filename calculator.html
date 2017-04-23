@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<meta charset="utf-8">
+	<style type="text/css">
+		.calculator{
+			width: 295px;
+			background: #c47335;
+			padding: 20px;
+			box-sizing: border-box;
+		}
+		.dispaly{
+			height: 25px;
+			background: #f19953;
+		}
+		.button{
+			width: 60px;
+			height: 50px;
+			background-color: white;
+			color: #f19953;
+			float: left;
+			margin-right: 5px;
+			margin-top: 5px;
+			text-align: center;
+			line-height: 50px;
+		}
+		.keyboard:after{
+			content: "";
+			display: block;
+			clear: both;
+		}
+	}
+	</style>
+</head>
+<body>
+<div class="calculator">
+  <div class="dispaly"></div>
+  <div class="keyboard">
+    <div class="button">AC</div>
+	<div class="button">CE</div>
+	<div class="button">%</div>
+	<div class="button" style="margin-right: 0">/</div>
+	<div class="button">7</div>
+	<div class="button">8</div>
+	<div class="button">9</div>
+	<div class="button" style="margin-right: 0">*</div>
+	<div class="button">4</div>
+	<div class="button">5</div>
+	<div class="button">6</div>
+	<div class="button" style="margin-right: 0">-</div>
+	<div class="button">1</div>
+	<div class="button">2</div>
+	<div class="button">3</div>
+	<div class="button" style="margin-right: 0">+</div>
+	<div class="button">.</div>
+	<div class="button">0</div>
+	<div class="button">Ans</div>
+	<div class="button" style="margin-right: 0">=</div>
+	<div class="button">(</div>
+	<div class="button">)</div>
+  </div>
+</div>
+<!-- <div class="llj"></div> -->
+<script type="text/javascript">
+var calculationHistory = []
+var dispaly = document.querySelector('.dispaly')
+var processing = true
+document.querySelector('.keyboard').addEventListener('click', function(e){
+	switch (e.target.innerText) {
+		case 'AC':
+		calculationHistory = []
+		dispaly.innerText = ""
+		break
+		case 'CE':
+		if (calculationHistory.length < 2) {
+			break
+		}
+		calculationHistory.pop()
+		dispaly.innerText = calculationHistory[calculationHistory.length-1]
+		break
+		case '=':
+		if(!valicate(dispaly.innerText)){
+			break
+		}
+		dispaly.innerText = calculate(dispaly.innerText)
+		calculationHistory = []
+		calculationHistory.push(dispaly.innerText)
+		break
+		default: 
+		dispaly.innerText += e.target.innerText
+		calculationHistory.push(dispaly.innerText)
+	}
+})
+
+/*
+下面这个函数计算四则运算中优先级较高的运算(*?%)
+传入的参数为字符串 例如firstCalculate("2*3*4/5*6%5")
+*/
+function firstCalculate(str){
+	while(/[*/%]/.test(str)){
+		let curCalculation = str.match(/[\d\.]+[*/%][\d\.]+/)[0]
+		if (curCalculation.indexOf("*") > 0) {
+			let result = curCalculation.match(/[\d\.]+/g).reduce(function(a, b){
+				return parseFloat(a) * parseFloat(b)
+			})
+			str = str.replace(curCalculation, result)
+		}
+		if (curCalculation.indexOf("/") > 0) {
+			let result = curCalculation.match(/[\d\.]+/g).reduce(function(a, b){
+				return parseFloat(a) / parseFloat(b)
+			})
+			str = str.replace(curCalculation, result)
+		}
+		if (curCalculation.indexOf("%") > 0) {
+			let result = curCalculation.match(/[\d\.]+/g).reduce(function(a, b){
+				return parseFloat(a) % parseFloat(b)
+			})
+			str = str.replace(curCalculation, result)
+		}
+	}
+	return str
+}
+/*
+下面这个函数计算四则运算中优先级第二高的运算(+-)
+传入的参数为字符串 例如secondCalculate("2+3+5-1")
+*/
+function secondCalculate(str){
+	while(/[\+-]/.test(str)){
+		let curCalculation = str.match(/[\d\.]+[\+-][\d\.]+/)[0]
+		if (curCalculation.indexOf("+") > 0){
+			let result = curCalculation.match(/[\d\.]+/g).reduce(function(a, b){
+				return parseFloat(a) + parseFloat(b)
+			})
+			str = str.replace(curCalculation, result)
+		}
+		if (curCalculation.indexOf("-") > 0){
+			let result = curCalculation.match(/[\d\.]+/g).reduce(function(a, b){
+				return parseFloat(a) - parseFloat(b)
+			})
+			str = str.replace(curCalculation, result)
+		}
+	}
+	return str
+}
+/*
+下面这个函数计算不含括号的表达式
+传入的参数为字符串 例如：calculateWithoutBrackets(2*4*7*9+3*5+8/4/2-9%4)
+*/
+function calculateWithoutBrackets(str){
+	str.match(/[\d*/%\.]+/g).forEach(function(val){
+		str = str.replace(val, firstCalculate(val))
+	})
+	return secondCalculate(str)
+}
+/*
+下面这个函数计算带括号的运算
+传入的参数为字符串 calculate("(1+2*3/4+6%4)+(3+4*5-2*3)")
+*/
+function calculate(str){
+	while (/\([^\(\)]+\)/.test(str)) {
+		var brackets = str.match(/\([^\(\)]+\)/g)
+	    brackets.forEach(function(val){
+	    	str = str.replace(val, calculateWithoutBrackets(val.match(/[^\(\)]+/)[0]))
+	    })
+	}
+	return calculateWithoutBrackets(str)
+}
+/*
+下面这个函数用来校验计算的表达式是否合法
+*/
+function valicate(str){
+	if (!str) {
+		return false
+	}
+	if (/^[*/%\+-\.]|[*/%\+-\.]$|[*/%\+-\.]{2}/.test(str)) {
+		return false
+	} else if (str.match(/\/[\d\.]+/)) {
+		return parseFloat(str.match(/\/[\d\.]+/)[0].match(/[\d\.]+/)[0])
+	}
+	return true
+}
+</script>
+</body>
+</html>
